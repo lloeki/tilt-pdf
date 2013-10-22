@@ -1,0 +1,37 @@
+# Tilt::PDF
+
+Integrates PDF generation into a Tilt flow
+
+## Dependencies
+
+This gem depends on PDFKit, which in turn requires `wkhtmltopdf`. It is recommended to use the statically compiled version of the latter, as it is built against a patched QT that supports more features.
+
+## Usage as a Tilt
+
+Add `tilt-pdf` to your Gemfile. Also add any template engine you may optionally want, such as `less` or `slim`.
+
+A `foo` template is currently threefold:
+
+- `foo.rpdf`: this file is a YAML file containing options pertaining to the PDF generation process, such as page size, orientation and metadata. Options are apssed as is to PDFKit, and subsequently to `wkhtmltopdf`.
+- `foo.html`: this document can be written in any template language you need (such as ERB or Slim), and the Tilt template resolution system via extension chaining will apply. Tilt will pass the render block to be yielded to this document.
+- `foo.css`: this stylesheet can be written in any template language you need (such as Sass or Less), and the Tilt template resolution system via extension chaining will apply. Tilt will *not* pass the block to be yielded to this template.
+
+The three files must currently be stored in the *same* directory.
+
+Rendering is done the usual Tilt way:
+
+```ruby
+require 'tilt-pdf'
+
+pdf = Tilt.new('foo.rpdf').render()
+```
+
+## Rails integration
+
+Require `tilt/pdf/rails` if you want to set up and register `tilt-pdf` as an ActionView template handler. You can do it in an initializer, or straight from the Gemfile:
+
+```ruby
+gem 'tilt-pdf', require: 'tilt/pdf/rails'
+```
+
+Put your three template files *together* in the relevant `app/views/foo` view directory. Work is in progress to enable better integration with Rails file layout.
