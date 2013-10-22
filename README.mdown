@@ -6,7 +6,7 @@ Integrates PDF generation into a Tilt flow
 
 This gem depends on PDFKit, which in turn requires `wkhtmltopdf`. It is recommended to use the statically compiled version of the latter, as it is built against a patched QT that supports more features.
 
-## Usage as a Tilt
+## Usage as a Tilt template
 
 Add `tilt-pdf` to your Gemfile. Also add any template engine you may optionally want, such as `less` or `slim`.
 
@@ -26,7 +26,7 @@ require 'tilt-pdf'
 pdf = Tilt.new('foo.rpdf').render()
 ```
 
-## Rails integration
+## Rails and ActionView integration
 
 Require `tilt/pdf/rails` if you want to set up and register `tilt-pdf` as an ActionView template handler. You can do it in an initializer, or straight from the Gemfile:
 
