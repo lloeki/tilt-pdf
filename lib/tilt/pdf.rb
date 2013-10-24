@@ -1,6 +1,7 @@
 require 'pdfkit'
 require 'tilt'
 require 'tilt/template'
+require 'yaml'
 
 module Tilt
   class PDFTemplate < Template
