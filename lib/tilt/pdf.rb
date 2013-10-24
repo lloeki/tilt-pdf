@@ -2,25 +2,6 @@ require 'pdfkit'
 require 'tilt'
 require 'tilt/template'
 
-PDFKit.configure do |config|
-  config.wkhtmltopdf =
-    '/Applications/wkhtmltopdf.app/Contents/MacOS/wkhtmltopdf'
-  config.default_options = {
-    page_size: 'A4',
-    orientation: 'portrait',
-    print_media_type: true,
-    dpi: 600,
-    margin_top: 0,
-    margin_bottom: 0,
-    margin_left: 0,
-    margin_right: 0,
-    header_spacing: 0,
-    footer_spacing: 0,
-    disable_smart_shrinking: true,
-    zoom: 1.0,
-  }
-end
-
 module Tilt
   class PDFTemplate < Template
     self.default_mime_type = 'application/pdf'
