@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    tilt-pdf (0.1.0)
+    tilt-pdf (0.1.2)
       pdfkit (~> 0.5.4)
       tilt (~> 1.4.1)
 

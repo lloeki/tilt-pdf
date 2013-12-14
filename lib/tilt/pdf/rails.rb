@@ -1,5 +1,4 @@
 require 'tilt-pdf'
-require 'action_view/template/handlers'
 
 module ActionView
   class Template
