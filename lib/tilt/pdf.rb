@@ -13,7 +13,7 @@ module Tilt
     def evaluate(scope, locals, &block)
       main = render_html(main_html_file, scope, locals, &block)
 
-      render_css(*css_files) do |css|
+      render_css(*css_files, scope, locals, block) do |css|
         kit = PDFKit.new(main, pdfkit_options)
         css.each { |f| kit.stylesheets << f }
         @output = kit.to_pdf
@@ -72,7 +72,7 @@ module Tilt
       Tilt.new(file).render(scope, locals, &block)
     end
 
-    def render_css(*files)
+    def render_css(*files, scope, locals, block)
       tmps = []
 
       css = files.map do |file|
@@ -82,7 +82,7 @@ module Tilt
         else
           tmp = Tempfile.new(File.basename(file))
           tmps << tmp
-          css = Tilt.new(file).render
+          css = Tilt.new(file).render(scope, locals, &block)
           tmp.write(css)
           tmp.close
 
