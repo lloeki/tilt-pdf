@@ -31,7 +31,7 @@ module Tilt
     end
 
     def dirname
-      eval_file.gsub(/#{basename}$/, '').chomp('/')
+      File.dirname(eval_file)
     end
 
     def find_html
