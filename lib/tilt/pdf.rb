@@ -13,9 +13,9 @@ module Tilt
     def evaluate(scope, locals, &block)
       main = render_html(main_html_file, scope, locals, &block)
 
-      render_css(*css_files, scope, locals, block) do |css|
+      render_to_tmp(*css_files, scope, locals, block) do |tmp|
         kit = PDFKit.new(main, pdfkit_options)
-        css.each { |f| kit.stylesheets << f }
+        tmp.each { |t, f| kit.stylesheets << f if t == 'text/css' }
         @output = kit.to_pdf
       end
 
@@ -72,21 +72,24 @@ module Tilt
       Tilt.new(file).render(scope, locals, &block)
     end
 
-    def render_css(*files, scope, locals, block)
+    def render_to_tmp(*files, scope, locals, block)
       tmps = []
+      noop = %w[html css]
 
       css = files.map do |file|
-        case file
-        when /.*\.css$/
-          file
+        if noop.include?(ext = File.extname(file).sub(/^\./, ''))
+          ["text/#{ext}", file]
         else
           tmp = Tempfile.new(File.basename(file))
           tmps << tmp
-          css = Tilt.new(file).render(scope, locals, &block)
-          tmp.write(css)
+          template = Tilt.new(file)
+          rendered = template.render(scope, locals, &block)
+          tmp.write(rendered)
           tmp.close
 
-          tmp.path
+          mime = template.class.default_mime_type
+
+          [mime, tmp.path]
         end
       end
 
