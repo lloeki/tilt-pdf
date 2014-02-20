@@ -11,12 +11,10 @@ module Tilt
     def prepare; end
 
     def evaluate(scope, locals, &block)
-      html_file = find_html
-      html = render_html(html_file, scope, locals, &block)
+      main = render_html(main_html_file, scope, locals, &block)
 
-      css_files = find_css
       render_css(*css_files) do |*css|
-        kit = PDFKit.new(html, pdfkit_options)
+        kit = PDFKit.new(main, pdfkit_options)
         css.each { |f| kit.stylesheets << f }
         @output = kit.to_pdf
       end
@@ -26,8 +24,36 @@ module Tilt
 
     private
 
+    def absolutize(path)
+      Pathname.new(path).absolute? ? path : File.join(dirname, path)
+    end
+
+    def config
+      @config = (YAML.load(data) || {})
+    end
+
+    def main_html_file
+      main_html_from_config || find_html
+    end
+
+    def main_html_from_config
+      if (f = config['main'])
+        absolutize(f)
+      end
+    end
+
+    def css_files
+      css_from_config || find_css
+    end
+
+    def css_from_config
+      return unless config.key?('stylesheets')
+
+      config.fetch('stylesheets', []).map { |f| absolutize(f) }
+    end
+
     def pdfkit_options
-      YAML.load(data) || {}
+      config.fetch('pdfkit', {})
     end
 
     def dirname
