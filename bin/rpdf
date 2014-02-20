@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.push File.expand_path(File.join(__FILE__, '../..'))
+
+require 'tilt-pdf'
+require 'slim'
+
+rpdf = ARGV.shift or fail('usage: rpdf filename')
+pdf = Tilt.new(rpdf).render
+File.open(File.basename(rpdf, '.rpdf') + '.pdf', 'wb') do |f|
+  f.write(pdf)
+end
