@@ -98,7 +98,18 @@ module Tilt
     end
 
     def pdfkit_options
-      config.fetch('pdfkit', {})
+      toplevel_options = %w[title
+                            orientation
+                            grayscale
+                            page-size
+                            margin-left
+                            margin-right
+                            margin-top
+                            margin-bottom]
+
+      options = config.select { |k, _| toplevel_options.include?(k) }
+
+      options.merge config.fetch('pdfkit', {})
     end
 
     def dirname
