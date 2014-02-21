@@ -13,9 +13,22 @@ module Tilt
     def evaluate(scope, locals, &block)
       main = render_html(main_html_file, scope, locals, &block)
 
-      render_to_tmp(*css_files, scope, locals, block) do |tmp|
-        kit = PDFKit.new(main, pdfkit_options)
+      render_to_tmp(*aux_files, scope, locals, block) do |tmp|
+        opts = pdfkit_options
+
+        if header
+          htmp = tmp.select { |_, f| f =~ /#{File.basename header}/ }.first[1]
+          opts.merge!('header-html' => htmp) if header
+        end
+
+        if footer
+          ftmp = tmp.select { |_, f| f =~ /#{File.basename footer}/ }.first[1]
+          opts.merge!('footer-html' => ftmp) if footer
+        end
+
+        kit = PDFKit.new(main, opts)
         tmp.each { |t, f| kit.stylesheets << f if t == 'text/css' }
+
         @output = kit.to_pdf
       end
 
@@ -30,6 +43,26 @@ module Tilt
 
     def config
       @config = (YAML.load(data) || {})
+    end
+
+    def aux_files
+      files = css_files
+      files << header if header
+      files << footer if footer
+
+      files
+    end
+
+    def header
+      if (f = config['header'])
+        absolutize(f)
+      end
+    end
+
+    def footer
+      if (f = config['footer'])
+        absolutize(f)
+      end
     end
 
     def main_html_file
@@ -77,17 +110,18 @@ module Tilt
       noop = %w[html css]
 
       css = files.map do |file|
-        if noop.include?(ext = File.extname(file).sub(/^\./, ''))
+        ext = File.extname(file).sub(/^\./, '')
+        if noop.include?(ext)
           ["text/#{ext}", file]
         else
-          tmp = Tempfile.new(File.basename(file))
-          tmps << tmp
           template = Tilt.new(file)
+          mime = template.class.default_mime_type
+          ext = mime.split('/').last
+          tmp = Tempfile.new([File.basename(file), '.' + ext])
+          tmps << tmp
           rendered = template.render(scope, locals, &block)
           tmp.write(rendered)
           tmp.close
-
-          mime = template.class.default_mime_type
 
           [mime, tmp.path]
         end
