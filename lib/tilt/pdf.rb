@@ -3,6 +3,7 @@ require 'tilt'
 require 'tilt/template'
 require 'yaml'
 require 'tempfile'
+require 'pry'
 
 module Tilt
   class PDFTemplate < Template
