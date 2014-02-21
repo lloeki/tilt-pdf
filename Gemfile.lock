@@ -11,8 +11,13 @@ GEM
     celluloid (0.15.2)
       timers (~> 1.1.0)
     coderay (1.0.9)
+    coffee-script (2.2.0)
+      coffee-script-source
+      execjs
+    coffee-script-source (1.7.0)
     commonjs (0.2.7)
     diff-lcs (1.2.4)
+    execjs (2.0.2)
     ffi (1.9.0)
     formatador (0.2.4)
     guard (2.1.1)
@@ -67,6 +72,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  coffee-script
   guard-rspec
   less
   pry

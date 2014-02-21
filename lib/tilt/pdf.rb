@@ -11,23 +11,23 @@ module Tilt
     def prepare; end
 
     def evaluate(scope, locals, &block)
-      main = render_html(main_html_file, scope, locals, &block)
-
-      render_to_tmp(*aux_files, scope, locals, block) do |tmp|
+      files = aux_files
+      files << main_html_file
+      render_to_tmp(*files, scope, locals, block) do |tmp|
         opts = pdfkit_options
 
         if header
-          htmp = tmp.select { |_, f| f =~ /#{File.basename header}/ }.first[1]
+          htmp = tmp.select { |_, f, _| f == header }.first[2]
           opts.merge!('header-html' => htmp) if header
         end
 
         if footer
-          ftmp = tmp.select { |_, f| f =~ /#{File.basename footer}/ }.first[1]
+          ftmp = tmp.select { |_, f, _| f == footer }.first[2]
           opts.merge!('footer-html' => ftmp) if footer
         end
 
-        kit = PDFKit.new(main, opts)
-        tmp.each { |t, f| kit.stylesheets << f if t == 'text/css' }
+        main = tmp.select { |_, f, _| f == main_html_file }.first[2]
+        kit = PDFKit.new(File.read(main), opts)
 
         @output = kit.to_pdf
       end
@@ -46,7 +46,9 @@ module Tilt
     end
 
     def aux_files
-      files = css_files
+      files = []
+      files.concat css_files
+      files.concat js_files
       files << header if header
       files << footer if footer
 
@@ -85,6 +87,16 @@ module Tilt
       config.fetch('stylesheets', []).map { |f| absolutize(f) }
     end
 
+    def js_files
+      js_from_config || find_js
+    end
+
+    def js_from_config
+      return unless config.key?('javascripts')
+
+      config.fetch('javascripts', []).map { |f| absolutize(f) }
+    end
+
     def pdfkit_options
       config.fetch('pdfkit', {})
     end
@@ -101,33 +113,83 @@ module Tilt
       Dir.glob(File.join(dirname, name + '.css*'))
     end
 
+    def find_js
+      Dir.glob(File.join(dirname, name + '.js*'))
+    end
+
     def render_html(file, scope, locals, &block)
       Tilt.new(file).render(scope, locals, &block)
     end
 
+    def inject_css!(document, stylesheet)
+      append_to_head!(document, "<style>#{stylesheet}</style>")
+    end
+
+    def inject_js!(document, script)
+      append_to_head!(document, "<script>#{script}</script>")
+    end
+
+    def append_to_head!(document, tag)
+      if document.match(/<\/head>/)
+        document.gsub!(/(<\/head>)/) { |s| tag + s }
+      else
+        document.insert(0, tag)
+      end
+    end
+
     def render_to_tmp(*files, scope, locals, block)
       tmps = []
-      noop = %w[html css]
+      no_tilt = %w[html css js]
 
-      css = files.map do |file|
+      result = files.map do |file|
         ext = File.extname(file).sub(/^\./, '')
-        if noop.include?(ext)
-          ["text/#{ext}", file]
+        if no_tilt.include?(ext)
+          mime = case ext
+                 when 'js', 'javascript' then 'application/javascript'
+                 else "text/#{ext}"
+                 end
+          rendered = File.read(file)
         else
           template = Tilt.new(file)
           mime = template.class.default_mime_type
           ext = mime.split('/').last
-          tmp = Tempfile.new([File.basename(file), '.' + ext])
-          tmps << tmp
           rendered = template.render(scope, locals, &block)
-          tmp.write(rendered)
-          tmp.close
-
-          [mime, tmp.path]
         end
+
+        [ext, mime, file, rendered]
       end
 
-      yield css
+      result.sort! do |a, b|
+        a[1] <=> b[1]  # css < html
+      end
+
+      styles = result.select { |_, mime, _, _| mime == 'text/css' }
+      scripts = result.select { |_, mime, _, _| mime == 'application/javascript' }
+      result.map! do |ext, mime, file, rendered|
+        if mime == 'text/html'
+          styles.each do |_, _, _, style|
+            inject_css!(rendered, style)
+          end
+          scripts.each do |_, _, _, script|
+            inject_js!(rendered, script)
+          end
+        end
+
+        [ext, mime, file, rendered]
+      end
+
+      result.map! do |ext, mime, file, rendered|
+        tmp = Tempfile.new([File.basename(file), '.' + ext])
+        tmps << tmp
+        tmp.write(rendered)
+        tmp.close
+
+        path = tmp.path
+
+        [mime, file, path]
+      end
+
+      yield result
     ensure
       tmps.each { |tmp| tmp.close! }
     end
