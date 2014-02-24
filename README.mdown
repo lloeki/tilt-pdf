@@ -29,8 +29,8 @@ A `foo` template is currently threefold:
   document.
 - `foo.css`: this stylesheet can be written in any template language you need
   (such as Sass or Less), and the Tilt template resolution system via extension
-  chaining will apply. Tilt will *not* pass the block to be yielded to this
-  template.
+  chaining will apply. Tilt will pass the block to be yielded to this
+  template, so you'd rather not `yield` if you fancy using `.css.erb`.
 
 The three files must currently be stored in the *same* directory.
 
@@ -84,14 +84,5 @@ as based from the rpdf file.
 
 ## Rails and ActionView integration
 
-Require `tilt/pdf/rails` if you want to set up and register `tilt-pdf` as an
-ActionView template handler. You can do it in an initializer, or straight from
-the Gemfile:
-
-```ruby
-gem 'tilt-pdf', require: 'tilt/pdf/rails'
-```
-
-Put your three template files *together* in the relevant `app/views/foo` view
-directory, or use absolute paths using application/engine root. Work is in
-progress to enable better integration with Rails file layout.
+Starting with 0.10, this functionality has been split into its own gem. Use
+[Tilt::PDF::Rails](https://github.com/lloeki/tilt-pdf-rails)
